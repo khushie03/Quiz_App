@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .user-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .user-info p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        div {
+            margin-bottom: 20px;
+        }
+        label {
+            font-size: 16px;
+            color: #333;
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz on {{ topic }}</h1>
+    
+    <!-- User Information Section -->
+    <div class="user-info">
+        <p><strong>Name:</strong> {{ name }}</p>
+        <p><strong>Email:</strong> {{ email }}</p>
+    </div>
+    
+    <form method="post" action="/submit_quiz">
+        {% for question in questions %}
+            <div>
+                <p><strong>Question {{ loop.index }}:</strong> {{ question.question }}</p>
+                
+                <label>
+                    <input type="radio" name="question_{{ loop.index0 }}" value="A" required> {{ question.option_a }}
+                </label>
+                
+                <label>
+                    <input type="radio" name="question_{{ loop.index0 }}" value="B"> {{ question.option_b }}
+                </label>
+                
+                <label>
+                    <input type="radio" name="question_{{ loop.index0 }}" value="C"> {{ question.option_c }}
+                </label>
+                
+                <label>
+                    <input type="radio" name="question_{{ loop.index0 }}" value="D"> {{ question.option_d }}
+                </label>
+                
+                <input type="hidden" name="correct_answer_{{ loop.index0 }}" value="{{ question.result }}">
+                <input type="hidden" name="question_text_{{ loop.index0 }}" value="{{ question.question }}">
+                <input type="hidden" name="option_a_{{ loop.index0 }}" value="{{ question.option_a }}">
+                <input type="hidden" name="option_b_{{ loop.index0 }}" value="{{ question.option_b }}">
+                <input type="hidden" name="option_c_{{ loop.index0 }}" value="{{ question.option_c }}">
+                <input type="hidden" name="option_d_{{ loop.index0 }}" value="{{ question.option_d }}">
+            </div>
+            <hr>
+        {% endfor %}
+        
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        
+        <button type="submit">Submit Quiz</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            background-color: #fff;
+            padding: 20px;
+            margin: 0;
+            border-bottom: 2px solid #ddd;
+        }
+        p {
+            margin: 10px 0;
+            padding: 0 20px;
+        }
+        h2 {
+            color: #333;
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            margin: 20px 0 10px;
+            border-radius: 5px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0 20px;
+        }
+        li {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        li p {
+            margin: 5px 0;
+        }
+        ul ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        ul ul li {
+            margin: 5px 0;
+            padding: 0;
+            background: none;
+            border: none;
+            box-shadow: none;
+        }
+        .download-btn {
+            display: block;
+            width: 80%;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+        .download-btn:hover {
+            background-color: #218838;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+            color: #0056b3;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz Results</h1>
+    <p>Name: {{ name }}</p>
+    <p>Email: {{ email }}</p>
+    <p>Score: {{ score }} / {{ max_score }}</p>
+    
+    <h2>Questions and Answers</h2>
+    <ul id="results">
+        {% for question in questions %}
+            <li>
+                <p><strong>Question:</strong> {{ question.question }}</p>
+                <p><strong>Options:</strong></p>
+                <ul>
+                    <li>(A) {{ question.option_a }}</li>
+                    <li>(B) {{ question.option_b }}</li>
+                    <li>(C) {{ question.option_c }}</li>
+                    <li>(D) {{ question.option_d }}</li>
+                </ul>
+                <p><strong>Your Answer:</strong> {{ question.user_answer }}</p>
+                <p><strong>Correct Answer:</strong> {{ question.result }}</p>
+                
+                <div>
+                    <h3>Additional Information:</h3>
+                    <p>{{ question.additional_info }}</p>
+                </div>
+                <hr>
+            </li>
+        {% endfor %}
+    </ul>
+    
+    <button onclick="downloadResults()" class="download-btn">Download Results</button>
+    <a href="/">Back to Home</a>
+    
+    <script>
+        function downloadResults() {
+            const resultsElement = document.getElementById('results');
+            const resultsText = resultsElement.innerText;
+            const blob = new Blob([resultsText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quiz_results.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
