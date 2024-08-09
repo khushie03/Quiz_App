@@ -78,34 +78,31 @@
 </head>
 <body>
     <h1>Quiz on {{ topic }}</h1>
-    
-    <!-- User Information Section -->
+
     <div class="user-info">
         <p><strong>Name:</strong> {{ name }}</p>
         <p><strong>Email:</strong> {{ email }}</p>
     </div>
     
     <form method="post" action="/submit_quiz">
+        <input type="hidden" name="topic" value="{{ topic }}">
+        <input type="hidden" name="name" value="{{ name }}">
+        <input type="hidden" name="email" value="{{ email }}">
         {% for question in questions %}
             <div>
                 <p><strong>Question {{ loop.index }}:</strong> {{ question.question }}</p>
-                
                 <label>
                     <input type="radio" name="question_{{ loop.index0 }}" value="A" required> {{ question.option_a }}
                 </label>
-                
                 <label>
                     <input type="radio" name="question_{{ loop.index0 }}" value="B"> {{ question.option_b }}
                 </label>
-                
                 <label>
                     <input type="radio" name="question_{{ loop.index0 }}" value="C"> {{ question.option_c }}
                 </label>
-                
                 <label>
                     <input type="radio" name="question_{{ loop.index0 }}" value="D"> {{ question.option_d }}
                 </label>
-                
                 <input type="hidden" name="correct_answer_{{ loop.index0 }}" value="{{ question.result }}">
                 <input type="hidden" name="question_text_{{ loop.index0 }}" value="{{ question.question }}">
                 <input type="hidden" name="option_a_{{ loop.index0 }}" value="{{ question.option_a }}">
@@ -115,11 +112,8 @@
             </div>
             <hr>
         {% endfor %}
-        
-        <input type="hidden" name="name" value="{{ name }}">
-        <input type="hidden" name="email" value="{{ email }}">
-        
         <button type="submit">Submit Quiz</button>
     </form>
+    
 </body>
 </html>
