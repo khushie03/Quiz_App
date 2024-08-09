@@ -7,7 +7,7 @@ def scholar_section(query):
     params = {
         "engine": "google_scholar",
         "q": query,
-        "api_key": "c8b912a9727723424bffac813a03eb897d43cee8cfac0741c3b266a6cb8bef71"
+        "api_key": "Your serp api key"
     }
 
     try:
@@ -24,7 +24,7 @@ def scholar_section(query):
         link = result.get('link', 'No link')
         snippet = result.get('snippet', 'No snippet')
         
-        formatted_result = f"**Title:** {title}\n**Link:** {link}\n**Snippet:** {snippet}"
+        formatted_result = f"Title: {title}\n\nLink:\n {link}\n\nSnippet:\n{snippet}"
         formatted_results.append(formatted_result)
     
     return formatted_results
