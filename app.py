@@ -1,16 +1,27 @@
+from study_material import scholar_section
+from send_mess import send_message
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import google.generativeai as genai
 import re
+import firebase_admin
+from firebase_admin import credentials, firestore
+from fpdf import FPDF
 
-genai.configure(api_key="AIzaSyDM9xdKD9JDW_wu6Lp1gnCraUK3Ds-DPNc")
+genai.configure(api_key="Your Gemini Api Key")
 
 app = FastAPI()
 
+cred = credentials.Certificate("C:/PROJECTS/Quiz App/quizapp-7bc35-firebase-adminsdk-4denh-cb7f1c9dab.json")
+firebase_admin.initialize_app(cred, {"databaseURL": "https://quizapp-7bc35-default-rtdb.firebaseio.com/"})
+
+db = firestore.client()
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
 def generate_questions(topic, number_of_questions):
     prompt = f"""
     You are an AI Quiz generator with respect to the specific topic. Generate {number_of_questions} multiple-choice questions on the topic: {topic}.
@@ -21,6 +32,17 @@ def generate_questions(topic, number_of_questions):
     model = genai.GenerativeModel("gemini-pro")
     response = model.generate_content(prompt + f" Topic: {topic} Number of questions: {number_of_questions}")
     return response.text
+
+def create_pdf(content, filename):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    for line in content:
+        pdf.multi_cell(0, 10, line.encode('latin-1', 'replace').decode('latin-1'))
+        pdf.ln()
+    
+    pdf.output(filename)
 
 def parse_questions(questions_text):
     question_pattern = re.compile(r"\*\*Question \d+:\*\*\n\n(.+?)\n\n\(A\) (.+?)\n\(B\) (.+?)\n\(C\) (.+?)\n\(D\) (.+?)\n\nResult: (.+)")
@@ -53,6 +75,7 @@ async def read_root(request: Request):
 @app.post("/generate_quiz", response_class=HTMLResponse)
 async def generate_quiz(request: Request, name: str = Form(...), email: str = Form(...), topic: str = Form(...), num_questions: int = Form(...)):
     try:
+        print(f"Received topic: {topic}")
         questions_text = generate_questions(topic, num_questions)
         questions = parse_questions(questions_text)
         return templates.TemplateResponse("quiz.html", {
@@ -67,7 +90,6 @@ async def generate_quiz(request: Request, name: str = Form(...), email: str = Fo
         print(f"Error generating quiz: {e}")
         return templates.TemplateResponse("error.html", {"request": request, "error": str(e)})
 
-
 @app.post("/submit_quiz", response_class=HTMLResponse)
 async def submit_quiz(request: Request):
     try:
@@ -75,6 +97,8 @@ async def submit_quiz(request: Request):
         
         name = form.get("name", "").strip()
         email = form.get("email", "").strip()
+        topic = form.get("topic", "").strip()
+        print(f"Topic is: {topic}")
         question_keys = [key for key in form.keys() if key.startswith("question_")]
         total_questions = len(question_keys)
         score = 0
@@ -85,7 +109,7 @@ async def submit_quiz(request: Request):
             question_key = f"question_{i}"
             user_answer = form.get(question_key, "").strip()
             
-            if not user_answer:  
+            if not user_answer:
                 continue
             
             correct_answer = form.get(f"correct_answer_{i}", "").strip()
@@ -104,13 +128,42 @@ async def submit_quiz(request: Request):
                     "option_d": option_d,
                     "user_answer": user_answer,
                     "result": correct_answer,
-                    "additional_info": provide_question(question_text) if question_text else ""  
+                    "additional_info": provide_question(question_text) if question_text else ""
                 })
             
                 if user_answer == correct_answer:
                     score += 10
         
         max_score = len(questions) * 10
+        
+        user_data = {
+            "name": name,
+            "email": email,
+            "responses": [{
+                "question": q["question"],
+                "user_answer": q["user_answer"],
+                "correct_answer": q["result"]
+            } for q in questions],
+            "score": score
+        }
+        db.collection("user_responses").add(user_data)
+
+        study_material = []
+        if topic:
+            study_material = scholar_section(topic)
+            if not study_material or "No results found." in study_material:
+                study_material = ["No study material found for this topic."]
+            else:
+                print(f"Study material for topic '{topic}' fetched successfully.")
+        else:
+            print("No valid topic provided, skipping study material retrieval.")
+            study_material = ["No topic was provided, so no study material could be retrieved."]
+        
+        create_pdf(study_material, "study_material.pdf")
+        create_pdf([f"Your score: {score}/{max_score}"] + [f"Question: {q['question']}\nYour Answer: {q['user_answer']}\nCorrect Answer: {q['result']}\nAdditional Info: {q['additional_info']}" for q in questions], "quiz_result.pdf")
+
+        send_message(name, email, "quiz_result.pdf", "study_material.pdf")
+        
         return templates.TemplateResponse("quiz_result.html", {
             "request": request,
             "name": name,
@@ -123,7 +176,6 @@ async def submit_quiz(request: Request):
     except Exception as e:
         print(f"Error submitting quiz: {e}")
         return templates.TemplateResponse("error.html", {"request": request, "error": str(e)})
-
 
 if __name__ == '__main__':
     import uvicorn
