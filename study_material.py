@@ -7,15 +7,17 @@ def scholar_section(query):
     params = {
         "engine": "google_scholar",
         "q": query,
-        "api_key": "your_Serp_api_key"
+        "api_key": "c8b912a9727723424bffac813a03eb897d43cee8cfac0741c3b266a6cb8bef71"
     }
-    search = GoogleSearch(params)
-    results = search.get_dict()
-    organic_results = results.get("organic_results", [])
 
-    if not organic_results:
-        return "No results found."
-
+    try:
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        organic_results = results.get("organic_results", [])
+        
+    except Exception as e:
+        print(f"Error fetching results: {e}")
+        return []
     formatted_results = []
     for result in organic_results:
         title = result.get('title', 'No title')
@@ -26,3 +28,4 @@ def scholar_section(query):
         formatted_results.append(formatted_result)
     
     return formatted_results
+
