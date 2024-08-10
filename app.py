@@ -10,7 +10,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from fpdf import FPDF
 
-genai.configure(api_key="Your Gemini Api Key")
+genai.configure(api_key="Your gemini api key")
 
 app = FastAPI()
 
@@ -22,16 +22,33 @@ db = firestore.client()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-def generate_questions(topic, number_of_questions):
+def generate_questions(topic, number_of_questions, level):
     prompt = f"""
     You are an AI Quiz generator with respect to the specific topic. Generate {number_of_questions} multiple-choice questions on the topic: {topic}.
-    This quiz will be an MCQ-based quiz, so for every question, you need to create 4 options with one correct answer.
+    This quiz will be a Single option correct-based quiz, so for every question, you need to create 4 options with one correct answer.
+    Make options such that single option is correct
     Format the response text as follows:
+
+    Also on the basis of the level of the questions set easy, medium, hard set the questions
     **Question 1:**\n\nQuestion?\n\n(A) OptionA\n(B) OptionB\n(C) OptionC\n(D) OptionD\n\nResult: A,B,C,D
     """
     model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(prompt + f" Topic: {topic} Number of questions: {number_of_questions}")
+    response = model.generate_content(prompt + f" Topic: {topic} Number of questions: {number_of_questions} and level is: {level}")
     return response.text
+
+def from_previous_question(topic, number_of_questions, previous, level):
+    prompt = f"""
+Based on the user previous responses ask questions from the user {previous}
+You are an AI Quiz generator with respect to the specific topic. Generate {number_of_questions} multiple-choice questions on the topic: {topic}.
+    This quiz will be an single correct option-based quiz, so for every question, you need to create 4 options with one correct answer.
+    Format the response text as follows:
+    Make options such that single option is correct
+    Also on the basis of the level of the questions set easy, medium, hard set the questions
+    **Question 1:**\n\nQuestion?\n\n(A) OptionA\n(B) OptionB\n(C) OptionC\n(D) OptionD\n\nResult: A,B,C,D"""
+    model = genai.GenerativeModel("gemini-pro")
+    response = model.generate_content(prompt + f" Topic: {topic} Number of questions: {number_of_questions} Previous Responses: {previous} level: {level}")
+    return response.text
+
 
 def create_pdf(content, filename):
     pdf = FPDF()
@@ -72,12 +89,51 @@ def provide_question(question):
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-@app.post("/generate_quiz", response_class=HTMLResponse)
-async def generate_quiz(request: Request, name: str = Form(...), email: str = Form(...), topic: str = Form(...), num_questions: int = Form(...)):
+db = firestore.client()
+
+@app.get("/leaderboard", response_class=HTMLResponse)
+async def get_leaderboard(request: Request):
     try:
-        print(f"Received topic: {topic}")
-        questions_text = generate_questions(topic, num_questions)
+        collection_ref = db.collection('user_responses')
+        docs = collection_ref.stream()
+        documents = []
+        for doc in docs:
+            data = doc.to_dict()
+            print(f'Document Data: {data}') 
+            documents.append({
+                'id': doc.id,
+                'name': data.get('name', 'N/A'),
+                'score': data.get('score', 0),
+                'topic': data.get('topic', 'N/A')  
+            })
+        
+        documents.sort(key=lambda x: x['score'], reverse=True)
+    
+        return templates.TemplateResponse("leaderboard.html", {"request": request, "leaderboard": documents})
+    
+    except Exception as e:
+        return templates.TemplateResponse("error.html", {"request": request, "error": str(e)})
+
+@app.post("/generate_quiz", response_class=HTMLResponse)
+async def generate_quiz(request: Request, name: str = Form(...), email: str = Form(...), topic: str = Form(...), num_questions: int = Form(...), level: str = Form(...)):
+    try:
+        print(f"Received topic: {topic}, level: {level}")
+        
+        existing_user = db.collection("user_responses").where("email", "==", email).get()
+        
+        if existing_user:
+            previous_responses = []
+            for user in existing_user:
+                user_data = user.to_dict()
+                if "responses" in user_data:
+                    previous_responses.extend(user_data["responses"])
+            previous_responses_str = ', '.join([f"{response['question']}: {response['user_answer']}" for response in previous_responses])
+            questions_text = from_previous_question(topic, num_questions, previous_responses_str, level)
+        else:
+            questions_text = generate_questions(topic, num_questions, level)
+        
         questions = parse_questions(questions_text)
+        
         return templates.TemplateResponse("quiz.html", {
             "request": request,
             "name": name,
@@ -99,6 +155,7 @@ async def submit_quiz(request: Request):
         email = form.get("email", "").strip()
         topic = form.get("topic", "").strip()
         print(f"Topic is: {topic}")
+        
         question_keys = [key for key in form.keys() if key.startswith("question_")]
         total_questions = len(question_keys)
         score = 0
@@ -118,6 +175,9 @@ async def submit_quiz(request: Request):
             option_b = form.get(f"option_b_{i}", "").strip()
             option_c = form.get(f"option_c_{i}", "").strip()
             option_d = form.get(f"option_d_{i}", "").strip()
+            
+            # Ensure that the correct answer does not contain any unwanted text
+            correct_answer = correct_answer.split(":")[0].strip()  # Extract only the letter part (A, B, C, D)
             
             if question_text:
                 questions.append({
@@ -159,8 +219,11 @@ async def submit_quiz(request: Request):
             print("No valid topic provided, skipping study material retrieval.")
             study_material = ["No topic was provided, so no study material could be retrieved."]
         
+        # Create PDFs
         create_pdf(study_material, "study_material.pdf")
-        create_pdf([f"Your score: {score}/{max_score}"] + [f"Question: {q['question']}\nYour Answer: {q['user_answer']}\nCorrect Answer: {q['result']}\nAdditional Info: {q['additional_info']}" for q in questions], "quiz_result.pdf")
+        create_pdf([f"Your score: {score}/{max_score}"] + [
+            f"Question: {q['question']}\nOptions:\n(A) {q['option_a']}\n(B) {q['option_b']}\n(C) {q['option_c']}\n(D) {q['option_d']}\nYour Answer: {q['user_answer']}\nCorrect Answer: {q['result']}\nAdditional Info: {q['additional_info']}"
+            for q in questions], "quiz_result.pdf")
 
         send_message(name, email, "quiz_result.pdf", "study_material.pdf")
         
@@ -176,6 +239,7 @@ async def submit_quiz(request: Request):
     except Exception as e:
         print(f"Error submitting quiz: {e}")
         return templates.TemplateResponse("error.html", {"request": request, "error": str(e)})
+
 
 if __name__ == '__main__':
     import uvicorn
