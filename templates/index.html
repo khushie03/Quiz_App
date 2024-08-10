@@ -35,7 +35,8 @@
         }
         input[type="text"],
         input[type="email"],
-        input[type="number"] {
+        input[type="number"],
+        select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -47,7 +48,8 @@
         }
         input[type="text"]:focus,
         input[type="email"]:focus,
-        input[type="number"]:focus {
+        input[type="number"]:focus,
+        select:focus {
             border-color: #4a90e2;
             outline: none;
         }
@@ -94,6 +96,14 @@
         
         <label for="num_questions">Number of Questions:</label>
         <input type="number" id="num_questions" name="num_questions" required><br><br>
+        
+        <label for="level">Level:</label>
+<select id="level" name="level" required>
+    <option value="EASY">EASY</option>
+    <option value="MEDIUM">MEDIUM</option>
+    <option value="DIFFICULT">DIFFICULT</option>
+</select><br><br>
+
         
         <button type="submit">Generate Quiz</button>
     </form>
