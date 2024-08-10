@@ -11,6 +11,7 @@
             margin: 0;
             padding: 20px;
             color: #333;
+            position: relative;
         }
         h1 {
             text-align: center;
@@ -24,6 +25,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
         label {
             display: block;
@@ -63,9 +65,22 @@
         button:hover {
             background-color: #357ab8;
         }
+        .button-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .button-container button {
+            width: auto;
+            padding: 10px 20px;
+        }
     </style>
 </head>
 <body>
+    <div class="button-container">
+        <button onclick="location.href='/leaderboard'">View Leaderboard</button>
+    </div>
+
     <h1>Generate a Quiz</h1>
     <form method="post" action="/generate_quiz">
         <label for="name">Name:</label>
