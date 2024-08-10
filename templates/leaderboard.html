@@ -57,44 +57,17 @@
                 <tr>
                     <th>Name</th>
                     <th>Score</th>
-                    <th>Topic</th>
                 </tr>
             </thead>
-            <tbody id="leaderboard">
-                <!-- Leaderboard items will be dynamically inserted here -->
+            <tbody>
+                {% for entry in leaderboard %}
+                <tr>
+                    <td>{{ entry.name or "N/A" }}</td>
+                    <td>{{ entry.score or "N/A" }}</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            try {
-                const response = await fetch("/leaderboard");
-                const leaderboardData = await response.json();
-
-                const tbody = document.getElementById("leaderboard");
-
-                leaderboardData.forEach(data => {
-                    const row = document.createElement("tr");
-
-                    const nameCell = document.createElement("td");
-                    nameCell.textContent = data.name;
-                    row.appendChild(nameCell);
-
-                    const scoreCell = document.createElement("td");
-                    scoreCell.textContent = data.score;
-                    row.appendChild(scoreCell);
-
-                    const topicCell = document.createElement("td");
-                    topicCell.textContent = data.topic || "N/A";
-                    row.appendChild(topicCell);
-
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error("Error fetching leaderboard data:", error);
-            }
-        });
-    </script>
 </body>
 </html>
