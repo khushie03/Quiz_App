@@ -6,7 +6,7 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-pro",
     verbose=True,
     temperature=0.5,
-    google_api_key="LAIzaSyDM9xdKD9JDW_wu6p1gnCraUK3Ds-DPNc"
+    google_api_key=""
 )
 
 question_generator = Agent(
