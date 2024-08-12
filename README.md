@@ -1,6 +1,3 @@
-Here’s a sample README file for your project. You can modify it according to any additional details or specific instructions you might have.
-
----
 
 # Quiz App
 
