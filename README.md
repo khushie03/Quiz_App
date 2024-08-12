@@ -76,7 +76,11 @@ The Quiz App is a web-based application for generating and taking quizzes on var
 - **Submit Quiz**: After taking the quiz, submit your answers to receive a PDF report of your results and study materials.
 
 ## YOUTUBE LINK :
-https://youtu.be/QTJABO6i4Tk
+
+**Previous Version Using Gemini** : [Link](https://youtu.be/8WB0VeyhhP4?si=JCckUyNmdY4yQcai)
+**Current Version using CrewAI** : [Link](https://youtu.be/QTJABO6i4Tk?si=QrCn2WLhij39kDLE)
+
+
 ## Error Handling
 
 In case of errors, the application will display error pages with details. Common issues include:
