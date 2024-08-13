@@ -7,8 +7,8 @@ import os
 
 EMAIL_SERVER = "smtp.gmail.com"
 PORT = 465
-SENDER_EMAIL = "khushi2003p@gmail.com"
-PASSWORD_EMAIL = "oora cvcr sjjd upgb"
+SENDER_EMAIL = "Your gmail id"
+PASSWORD_EMAIL = "Your smtp password"
 
 def send_message(name, receiver_email, score_pdf, study_material_pdf):
     msg = MIMEMultipart()
